@@ -66,7 +66,7 @@ struct SelectPlan_PW1<Content: View>: View {
                         .padding(.vertical, 4)
                         .background(
                             RoundedRectangle(cornerRadius: 12)
-                                .fill(Color.blueColors)
+                                .fill(Color.blueSubColors)
                         )
                         .zIndex(1)
                         .offset(x: -100, y: -30)

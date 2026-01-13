@@ -103,6 +103,9 @@ struct XmarkButton: View {
                     
                     self.showX = false
                     
+                    
+                    guard AppConstants.disableFirstLauch == false else { return }
+                    
                     if subVM.isFirstLaunch == true {
                         subVM.isFirstLaunch = false
                     }

@@ -33,12 +33,6 @@ class SharedWebViewManager: ObservableObject {
         return webView
     }
     
-    func updateBindings(_ bindings: WebViewBindings) {
-
-        self.currentBindings = bindings
-        coordinator?.bindings = bindings
-    }
-    
     func NavigateTo(url: URL) {
 
         guard let webView = webView else { return }

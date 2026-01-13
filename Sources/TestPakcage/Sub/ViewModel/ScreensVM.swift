@@ -58,10 +58,13 @@ public final class ScreensVM: ObservableObject {
             if config.paywallKey == PaywallKey.emptySub.paywallKey {
                 noSub = true
                 isFirstLaunch = false
+                flow = .main
             } else {
                 noSub = false
                 isLastPage = true
                 flow = .main
+                
+//                guard AppConstants.showPaywall else { return noSub = true }
                 showPaywall = true
             }
         }

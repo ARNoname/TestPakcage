@@ -127,7 +127,7 @@ struct WebSilentPaywall: View {
                 .multilineTextAlignment(.center)
                 .foregroundStyle(Color.white)
                 .frame(maxWidth: .infinity, maxHeight: 180)
-                .background(Color.blueColors)
+                .background(Color.blueSubColors)
                 .cornerRadius(20)
                 .overlay {
                     Text("Limited-time Deal")

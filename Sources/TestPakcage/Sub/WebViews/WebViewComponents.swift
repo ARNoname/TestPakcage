@@ -147,7 +147,7 @@ struct WebViewComponents: View {
             .frame(maxWidth: .infinity)
             .padding(.top, 35)
             .padding(.bottom, isTimer ? 5 : 35)
-            .background(Color.blueColors)
+            .background(Color.blueSubColors)
             .cornerRadius(20)
 
         }

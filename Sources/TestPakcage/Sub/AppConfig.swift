@@ -2,23 +2,12 @@
 import SwiftUI
 
 @MainActor
-public class AppConfig {
-    @MainActor  static let shared = AppConfig()
+class AppConfig {
+    static let shared = AppConfig()
 
-    public var onboardKey: String
-    public var paywallKey: String
-    public var payType: PaywallType
-    
-    public init(
-        onboardKey: String = "o_1",
-        paywallKey: String = "p_1",
-        payType: PaywallType = .standard
-    ) {
-        self.onboardKey = onboardKey
-        self.paywallKey = paywallKey
-        self.payType    = payType
-    }
-    
+    var onboardKey: String            = AppConstants.onboardKey
+    var paywallKey: String            = AppConstants.paywallKey
+    var payType: PaywallType          = AppConstants.payType
     var paywallModel                  = PaywallData()
     var swipePaywallModel             = PaywallData()
     var swipePaywallKey: String       = ""

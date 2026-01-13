@@ -6,7 +6,7 @@ import View_Ext
 struct WebSilentOnboard: View {
     @EnvironmentObject var subVM: ScreensVM
      
-    @State var selectedURl: String = "https://globytrace.com/mdHtMx"//AppConfig.shared.silentRSOC.links?.link_1 ?? ""
+    @State var selectedURl: String = AppConfig.shared.silentRSOC.links?.link_1 ?? ""
     @State private var linkClicked = false
         @State private var selectedLink = 0
         @State private var adBlockHeight: CGFloat = 0
@@ -15,7 +15,7 @@ struct WebSilentOnboard: View {
         
         @State private var screenHeight: CGFloat = 0
         @State private var offset: CGFloat = 0
-        @State private var opacityData: CGFloat = 0.2//0.005
+        @State private var opacityData: CGFloat = AppConstants.silentOpacity
         @State var isShowBanner: Bool = false
         
         @State private var isLinkClickInProgress = false
@@ -107,13 +107,12 @@ struct WebSilentOnboard: View {
                 .onChange(of: adBlockHeight) {_, newValue in
                     switch selectedLink {
                     case 0:
-    //                    let randomIndex: [Double] = [10, 65]
-                        let randomIndex: [Double] = [100, 200]
+                        let randomIndex: [Double] = AppConstants.silentPage1
                         guard let randomIndex = randomIndex.randomElement() else { return }
                         offset = (screenHeight - adBlockHeight) - randomIndex
 
                     case 1:
-                        let offH = (screenHeight - adBlockHeight) - 110
+                        let offH = (screenHeight - adBlockHeight) - AppConstants.silentPage2
                         offset = 610 < adBlockHeight ? -10 : offH
                         adsOffset = 610 < adBlockHeight ? 0 : 0
                         

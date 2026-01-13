@@ -20,37 +20,35 @@ public struct LaunchView<LaunchContent: View>: View {
     @State var config = AppConfig.shared
     
     @Binding var showPayWall: Bool
-    public var launchDuration: Double
     @ViewBuilder var launchView: () -> LaunchContent
     
     public init(
         showPayWall: Binding<Bool>,
-        launchDuration:Double = 0,
         @ViewBuilder launchView: @escaping () -> LaunchContent
     ) {
         _showPayWall = showPayWall
         self.launchView = launchView
-        self.launchDuration = launchDuration
     }
     
     public var body: some View {
-        ZStack {
-        launchView()
-//            Color.white.ignoresSafeArea()
-//            
-//            HStack(spacing: 8) {
-//                Image("logoIcon")
-//                    .resizable()
-//                    .scaledToFit()
-//                    .frame(width: 45, height: 40)
-//                Text("AppName")
-//                    .fontApp(.bold, 40)
-//            }
-//            
-//            LottieView(animationName: "Trail loading")
-//                .frame(width: 120, height: 120)
-//                .vAlig(.bottom)
-        }
+        //        ZStack {
+        //            Color.white.ignoresSafeArea()
+        //
+        //            HStack(spacing: 8) {
+        //                Image("logoIcon")
+        //                    .resizable()
+        //                    .scaledToFit()
+        //                    .frame(width: 45, height: 40)
+        //                Text("AppName")
+        //                    .fontApp(.bold, 40)
+        //            }
+        //
+        //            LottieView(animationName: "Trail loading")
+        //                .frame(width: 120, height: 120)
+        //                .vAlig(.bottom)
+        //        }
+        //        }
+    launchView()
         .overlay {
             if showTechService {
                 TechServiceView()
@@ -58,8 +56,6 @@ public struct LaunchView<LaunchContent: View>: View {
             }
         }
         .task {
-            try? await Task.sleep(for: .seconds(launchDuration))
-            
             await analyticsManager.sendStatus()
                 
             await UpdateConfig()
@@ -67,7 +63,7 @@ public struct LaunchView<LaunchContent: View>: View {
             await analyticsManager.sendViewNumber(pageNumber: subVM.currentNumberPage)
             await managerIAP.updateProduct()
             
-            try? await Task.sleep(for: .seconds(launchDuration))
+            try? await Task.sleep(for: .seconds(AppConstants.launchDuration))
             
             withAnimation {
                 if !analyticsManager.showUpdateAlert {
@@ -109,9 +105,9 @@ public struct LaunchView<LaunchContent: View>: View {
      
         if let analityc = analyticsManager.modelResponse  {
             
-//            self.config.payType = analityc.onboarding == PaywallKey.bob.onbordKey ? .bob : .standard
-//            self.config.onboardKey = analityc.onboarding ?? ""
-//            self.config.paywallKey = analityc.paywall ?? ""
+            self.config.payType = analityc.onboarding == PaywallKey.bob.onbordKey ? .bob : .standard
+            self.config.onboardKey = analityc.onboarding ?? ""
+            self.config.paywallKey = analityc.paywall ?? ""
             
             self.subVM.pageOnbCount()
             

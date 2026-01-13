@@ -136,7 +136,7 @@ public var body: some View {
     
     @ViewBuilder
     private func OnboardingContent() -> some View {
-//        if config.payType == .standard {
+        if config.payType == .standard {
             ZStack {
                 OnbView(
                     subVM: subVM,
@@ -147,7 +147,7 @@ public var body: some View {
                 )
                 .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading)))
                 
-//                if config.silentRSOC.isEnabled && config.payType == .standard {
+                if config.silentRSOC.isEnabled && config.payType == .standard {
                     WebSilentOnboard(
                         clickedURL: $subVM.clickedURL,
                         isOpacity: $subVM.isSilentOpacity,
@@ -155,18 +155,18 @@ public var body: some View {
                             subVM.nextPage()
                             feedbackApp()
                         }
-//                }
+                }
             }
-//        } else {
-//            OnbView(
-//                subVM: subVM,
-//                first: firstOnb,
-//                second: secondOnb,
-//                third: thirdOnb,
-//                bob: bobOnb
-//            )
-//                .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading)))
-//        }
+        } else {
+            OnbView(
+                subVM: subVM,
+                first: firstOnb,
+                second: secondOnb,
+                third: thirdOnb,
+                bob: bobOnb
+            )
+                .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading)))
+        }
     }
 }
 

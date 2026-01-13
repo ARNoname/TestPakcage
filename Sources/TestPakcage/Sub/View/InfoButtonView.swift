@@ -50,7 +50,7 @@ struct InfoButtonView: View {
              })
         }
         .fontApp(.semibold, 12)
-        .foregroundStyle(AppConfig.shared.payType == .bob ? Color.black : Color.grayColors)
+        .foregroundStyle(AppConfig.shared.payType == .bob ? Color.black : Color.graySubColors)
         .padding(.bottom)
     }
 }

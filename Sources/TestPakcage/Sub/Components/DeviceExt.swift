@@ -2,7 +2,7 @@ import SwiftUI
 
 @MainActor
 extension UIDevice {
-    static var isSimulator: Bool {
+   public static var isSimulator: Bool {
 #if targetEnvironment(simulator)
         return true
 #else
@@ -12,6 +12,6 @@ extension UIDevice {
 }
 
 @MainActor
-var isPad: Bool {
+public var isPad: Bool {
     UIDevice.current.userInterfaceIdiom == .pad
 }
