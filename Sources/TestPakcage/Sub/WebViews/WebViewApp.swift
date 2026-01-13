@@ -36,6 +36,7 @@ struct WebViewApp: UIViewRepresentable {
           Coordinator(self)
       }
 
+      @MainActor
       class Coordinator: NSObject, WKNavigationDelegate {
           var parent: WebViewApp
 
@@ -43,25 +44,23 @@ struct WebViewApp: UIViewRepresentable {
               self.parent = parent
           }
 
-      func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+      func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction) async -> WKNavigationActionPolicy {
 
               guard let url = navigationAction.request.url else {
-                  decisionHandler(.allow)
-                  return
+                  return .allow
               }
 
               let urlString = url.absoluteString
               print("WebView navigation to: \(urlString)")
           
               if navigationAction.navigationType == .linkActivated {
-                  decisionHandler(.allow)
-                  DispatchQueue.main.async {
-                      self.parent.linkClicked.toggle()
-                      self.parent.clickedURL = urlString
-                      print("✅ Link clicked: \(self.parent.linkClicked)")
-                  }
+                  // UI updates are on MainActor due to class attribute
+                  self.parent.linkClicked.toggle()
+                  self.parent.clickedURL = urlString
+                  print("✅ Link clicked: \(self.parent.linkClicked)")
+                  return .allow
               } else {
-                  decisionHandler(.allow)
+                  return .allow
               }
           }
 
