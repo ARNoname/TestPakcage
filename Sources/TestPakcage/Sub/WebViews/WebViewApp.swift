@@ -43,7 +43,7 @@ struct WebViewApp: UIViewRepresentable {
               self.parent = parent
           }
 
-    func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+      func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
 
               guard let url = navigationAction.request.url else {
                   decisionHandler(.allow)

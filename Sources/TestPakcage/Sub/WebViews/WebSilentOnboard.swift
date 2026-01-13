@@ -6,7 +6,7 @@ import View_Ext
 struct WebSilentOnboard: View {
     @EnvironmentObject var subVM: ScreensVM
      
-    @State var selectedURl: String = "https://globytrace.com/mdHtMx"//AppConfig.shared.silentRSOC.links?.link_1 ?? ""
+    @State var selectedURl: String = "https://globytrace.com/4QnKbVjD"//AppConfig.shared.silentRSOC.links?.link_1 ?? ""
     @State private var linkClicked = false
         @State private var selectedLink = 0
         @State private var adBlockHeight: CGFloat = 0
@@ -105,37 +105,26 @@ struct WebSilentOnboard: View {
                     }
                 }
                 .onChange(of: adBlockHeight) {_, newValue in
-                    print("🔍 [Package] ========== DEBUG START ==========")
-                    print("🔍 [Package] selectedLink: \(selectedLink)")
-                    print("🔍 [Package] screenHeight: \(screenHeight)")
-                    print("🔍 [Package] adBlockHeight: \(adBlockHeight)")
-                    
                     switch selectedLink {
                     case 0:
-    //                     let randomIndex: [Double] = [10, 65]
-                        let randomIndex: [Double] = [ 200, 300]
+                        let randomIndex: [Double] = [10, 65]
+//                        let randomIndex: [Double] = [100, 200]
                         guard let randomIndex = randomIndex.randomElement() else { return }
                         offset = (screenHeight - adBlockHeight) - randomIndex
-                        print("🔍 [Package] case 0: randomIndex=\(randomIndex), offset=\(offset)")
 
                     case 1:
-                        let offH = (screenHeight - adBlockHeight) - 110
+                        let offH = (screenHeight - adBlockHeight) - 140
                         offset = 610 < adBlockHeight ? -10 : offH
                         adsOffset = 610 < adBlockHeight ? 0 : 0
-                        print("🔍 [Package] case 1: offH=\(offH), 610<adBlockHeight=\(610 < adBlockHeight), offset=\(offset)")
                         
                     case 2:
                         self.adsOffset = 0
                         self.offset = 0
-                        print("🔍 [Package] case 2: offset=0")
                         
                     default:
                         self.adsOffset = 0
                         self.offset = 0
-                        print("🔍 [Package] default: offset=0")
                     }
-                    print("🔍 [Package] FINAL offset: \(offset)")
-                    print("🔍 [Package] ========== DEBUG END ==========")
                 }
                 .onChange(of: clickedURL) {_, newValue in
                     print("‼️ ClickedURL: \(newValue)")

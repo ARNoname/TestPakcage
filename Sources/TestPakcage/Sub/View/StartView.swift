@@ -1,6 +1,5 @@
 import SwiftUI
 import Combine
-import Lottie
 #if canImport(View_Ext)
 import View_Ext
 
@@ -174,9 +173,8 @@ public var body: some View {
 #endif
 
 
-public struct Test: View {
-    public init(){}
-  public  var body: some View {
+struct Test: View {
+    var body: some View {
         StartView(
             launchApp: {LaunchScreenTests()},
             firstOnb: {OnbScreen1Tests()},

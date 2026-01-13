@@ -1,7 +1,7 @@
 import SwiftUI
 import WebKit
 
-public struct WebViews: UIViewRepresentable{
+struct WebViews: UIViewRepresentable {
     let url: URL
     @Binding var linkClicked: Bool
     @Binding var clickedURL: String
@@ -12,11 +12,9 @@ public struct WebViews: UIViewRepresentable{
 
     var useSharedInstance: Bool = false
         
-    public func makeUIView(context: Context) -> WKWebView {
-        print("🔧 [Package] makeUIView called, useSharedInstance=\(useSharedInstance)")
-        
+    func makeUIView(context: Context) -> WKWebView {
+     
         if useSharedInstance, let sharedWebView = SharedWebViewManager.shared.getWebView() {
-            print("🔧 [Package] Using existing sharedWebView")
             let bindings = SharedWebViewManager.WebViewBindings(
                 linkClicked: $linkClicked,
                 clickedURL: $clickedURL,
@@ -25,14 +23,20 @@ public struct WebViews: UIViewRepresentable{
                 adsHeight: $adsHeight,
                 adsOffset: $adsOffset
             )
-            SharedWebViewManager.shared.updateBindings(bindings)
-      
-            // ВАЖЛИВО: оновлюємо delegates щоб події йшли на новий coordinator
+            // Use setWebView to fully update the manager's state
+            SharedWebViewManager.shared.setWebView(sharedWebView, coordinator: context.coordinator, bindings: bindings)
+            
+            // Re-assign delegates to ensure the new coordinator receives events
             sharedWebView.navigationDelegate = context.coordinator
             sharedWebView.uiDelegate = context.coordinator
+            
+            // Re-assign script handler
+            sharedWebView.configuration.userContentController.removeScriptMessageHandler(forName: "adsMetrics")
+            sharedWebView.configuration.userContentController.add(context.coordinator, name: "adsMetrics")
+            
             context.coordinator.webView = sharedWebView
-            context.coordinator.bindings = bindings
-            print("🔄 [Package] SharedWebView: Updated delegates and bindings")
+            context.coordinator.setupURLObservation(for: sharedWebView)
+            
             return sharedWebView
         }
         
@@ -343,25 +347,9 @@ public struct WebViews: UIViewRepresentable{
         return webView
     }
 
-    public func updateUIView(_ uiView: WKWebView, context: Context) {
+    func updateUIView(_ uiView: WKWebView, context: Context) {
         
         if useSharedInstance {
-            // КЛЮЧОВЕ ВИПРАВЛЕННЯ: оновлюємо delegates при кожному updateUIView
-            uiView.navigationDelegate = context.coordinator
-            uiView.uiDelegate = context.coordinator
-            
-            let bindings = SharedWebViewManager.WebViewBindings(
-                linkClicked: $linkClicked,
-                clickedURL: $clickedURL,
-                clickedButtonText: $clickedButtonText,
-                screenHeight: $screenHeight,
-                adsHeight: $adsHeight,
-                adsOffset: $adsOffset
-            )
-            context.coordinator.bindings = bindings
-            SharedWebViewManager.shared.updateBindings(bindings)
-            print("🔄 [Package] updateUIView: Updated delegates and bindings")
-            
             let desired = url.absoluteString
             if context.coordinator.lastRequestedURL != desired {
                 SharedWebViewManager.shared.NavigateTo(url: url)
@@ -378,23 +366,49 @@ public struct WebViews: UIViewRepresentable{
         }
     }
 
-    public func makeCoordinator() -> Coordinator {
+    func makeCoordinator() -> Coordinator {
         Coordinator(self)
     }
 
-    public class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler, WKUIDelegate {
+    @MainActor
+    class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler, WKUIDelegate {
 
-        public var parent: WebViews
-        public var lastRequestedURL: String?
-        public var webView: WKWebView?
+        var parent: WebViews
+        var lastRequestedURL: String?
+        var webView: WKWebView?
         
-        public var bindings: SharedWebViewManager.WebViewBindings?
+        var bindings: SharedWebViewManager.WebViewBindings?
+        var urlObservation: NSKeyValueObservation?
+        var isInitialLoadFinished: Bool = false
 
-        public init(_ parent: WebViews) {
+        init(_ parent: WebViews) {
             self.parent = parent
         }
+            func setupURLObservation(for webView: WKWebView) {
+            // Invalidate existing observation if any
+            urlObservation?.invalidate()
+            
+            urlObservation = webView.observe(\.url, options: .new) { [weak self] webView, change in
+                Task { @MainActor in
+                    guard let self = self else { return }
+                    guard let url = webView.url else { return }
+                    print("🔗 KVO URL Changed: \(url.absoluteString)")
+                    
+                    if self.isInitialLoadFinished {
+                         print("🎯 KVO Setting linkClicked = true for URL: \(url.absoluteString)")
+                         if let bindings = self.bindings {
+                              bindings.linkClicked.wrappedValue = true
+                              bindings.clickedURL.wrappedValue = url.absoluteString
+                         } else {
+                              self.parent.linkClicked = true
+                              self.parent.clickedURL = url.absoluteString
+                         }
+                    }
+                }
+            }
+        }
         
-        public func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
     
             guard message.name == "adsMetrics", let dict = message.body as? [String: Any] else { return }
             
@@ -451,28 +465,26 @@ public struct WebViews: UIViewRepresentable{
             }
         }
 
-        public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             print("📄 WebView finished loading")
+            isInitialLoadFinished = true
+            setupURLObservation(for: webView)
     
             webView.evaluateJavaScript("if (window.collectAdsMetrics) { window.collectAdsMetrics(); }", completionHandler: nil)
         
             self.webView = webView
         }
 
-        public func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
-      
+         func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction) async -> WKNavigationActionPolicy {
             
             guard let url = navigationAction.request.url else {
-                decisionHandler(.allow)
-                return
+                return .allow
             }
 
             let urlString = url.absoluteString
             print("WebView navigation to: \(urlString)")
-            print("🔵 [Package] navigationType: \(navigationAction.navigationType.rawValue) (0=linkActivated, 1=formSubmitted, 2=backForward, 3=reload, 4=formResubmitted, 5=other)")
         
             if navigationAction.navigationType == .linkActivated {
-                print("🟢 [Package] LINK ACTIVATED! Setting linkClicked = true")
                 let getClickedElementTextScript = """
                 (function() {
                     try {
@@ -545,29 +557,28 @@ public struct WebViews: UIViewRepresentable{
                 })();
                 """
                 
-                webView.evaluateJavaScript(getClickedElementTextScript) { result, error in
-                    if let buttonText = result as? String, !buttonText.isEmpty {
-                        DispatchQueue.main.async {
-                            if let bindings = self.bindings {
-                                bindings.clickedButtonText.wrappedValue = buttonText
-                            } else {
-                                self.parent.clickedButtonText = buttonText
-                            }
-                        }
-                    } else {
-                        let fallbackText = url.lastPathComponent.isEmpty ? url.host ?? "Link" : url.lastPathComponent
-                        DispatchQueue.main.async {
-                            if let bindings = self.bindings {
-                                bindings.clickedButtonText.wrappedValue = fallbackText
-                            } else {
-                                self.parent.clickedButtonText = fallbackText
-                            }
-                        }
+                // Use MainActor for UI updates
+                Task { @MainActor in 
+                    do {
+                       let result = try await webView.evaluateJavaScript(getClickedElementTextScript)
+                       if let buttonText = result as? String, !buttonText.isEmpty {
+                           if let bindings = self.bindings {
+                               bindings.clickedButtonText.wrappedValue = buttonText
+                           } else {
+                               self.parent.clickedButtonText = buttonText
+                           }
+                       } else {
+                           let fallbackText = url.lastPathComponent.isEmpty ? url.host ?? "Link" : url.lastPathComponent
+                           if let bindings = self.bindings {
+                               bindings.clickedButtonText.wrappedValue = fallbackText
+                           } else {
+                               self.parent.clickedButtonText = fallbackText
+                           }
+                       }
+                    } catch {
+                       print("JS Error: \(error)")
                     }
-                }
-                
-                decisionHandler(.allow)
-                DispatchQueue.main.async {
+                    
                     print("🎯 Setting linkClicked = true for URL: \(urlString)")
                     if let bindings = self.bindings {
                         bindings.linkClicked.wrappedValue = true
@@ -577,16 +588,18 @@ public struct WebViews: UIViewRepresentable{
                         self.parent.clickedURL = urlString
                     }
                 }
+                
+                return .allow
             } else {
-                decisionHandler(.allow)
+                return .allow
             }
         }
 
-        public func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
             print("WebView failed to load: \(error.localizedDescription)")
         }
         
-        public func webView(_ webView: WKWebView,
+        func webView(_ webView: WKWebView,
                      createWebViewWith configuration: WKWebViewConfiguration,
                      for navigationAction: WKNavigationAction,
                      windowFeatures: WKWindowFeatures) -> WKWebView? {
