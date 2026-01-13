@@ -175,6 +175,7 @@ public var body: some View {
 
 
 public struct Test: View {
+    public init(){}
   public  var body: some View {
         StartView(
             launchApp: {LaunchScreenTests()},
